@@ -1,0 +1,11 @@
+{
+  "extends": "./node_modules/fastify-tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "sourceMap": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  },
+  "include": ["src/**/*.ts", "src/core/env.mts"],
+  "exclude": ["node_modules", "dist", "**/*.unit.ts", "**/*.test.ts", "**/*.spec.ts"]
+}
