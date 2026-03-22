@@ -1,6 +1,7 @@
-# api-fastify-vitest-boilerplate
+# api-fastify-passport-vitest-prisma
 
-A fastify REST API with vitest
+A fastify REST API with vitest, passport and prisma
+The end goal is to get a expanded boilerplate with session, redi and several auth mechanism (Good luck me)
 
 ## Getting started
 
