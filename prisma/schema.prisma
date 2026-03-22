@@ -7,12 +7,21 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  firstName String?
-  lastName  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                        String        @id @default(uuid(7)) @db.Uuid
+  email                     String        @unique
+  firstName                 String?
+  lastName                  String?
+  userName                  String?       @unique
+  mobilePhone               String?       @unique
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
 
   @@map("users")
+  accounts                  Account[]
+}
+
+model Account {
+  id                        String        @id @default(uuid(7)) @db.Uuid
+  userId                    String
+  user                      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
