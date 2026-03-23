@@ -4,9 +4,21 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    ignore:
+      # Block TypeScript major bumps until typescript-eslint and other tooling catch up
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
     groups:
+      typescript-toolchain:
+        # Keep TypeScript and its ESLint integration in sync — they have tight peer dep coupling
+        patterns:
+          - 'typescript'
+          - 'typescript-eslint'
       dev-dependencies:
         dependency-type: 'development'
+        exclude-patterns:
+          - 'typescript'
+          - 'typescript-eslint'
       dependencies:
         dependency-type: 'production'
 
