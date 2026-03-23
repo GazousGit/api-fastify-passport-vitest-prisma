@@ -8,7 +8,7 @@ import type { FastifyRateLimitOptions } from '@fastify/rate-limit'
  * @see https://github.com/fastify/fastify-rate-limit
  */
 export default fp<FastifyRateLimitOptions>(async (app) => {
-  app.register(rateLimit, {
+  await app.register(rateLimit, {
     // Maximum requests per window per IP
     max: 100,
 
@@ -29,6 +29,11 @@ export default fp<FastifyRateLimitOptions>(async (app) => {
       'x-ratelimit-remaining': true,
       'x-ratelimit-reset': true,
       'retry-after': true,
+    },
+    addHeadersOnExceeding: {
+      'x-ratelimit-limit': true,
+      'x-ratelimit-remaining': true,
+      'x-ratelimit-reset': true,
     },
 
     // Apply to all routes by default; opt out per-route with config: { rateLimit: false }

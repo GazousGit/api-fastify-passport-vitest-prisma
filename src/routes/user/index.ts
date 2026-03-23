@@ -20,6 +20,8 @@ const userSchema = {
     email: { type: 'string', format: 'email' },
     firstName: { type: 'string', nullable: true },
     lastName: { type: 'string', nullable: true },
+    userName: { type: 'string', nullable: true },
+    mobilePhone: { type: 'string', nullable: true },
     createdAt: { type: 'string', format: 'date-time' },
     updatedAt: { type: 'string', format: 'date-time' },
   },
@@ -85,6 +87,8 @@ const userRoutes: FastifyPluginAsync = async (app): Promise<void> => {
           email: { type: 'string', format: 'email' },
           firstName: { type: 'string', minLength: 1, maxLength: 100 },
           lastName: { type: 'string', minLength: 1, maxLength: 100 },
+          userName: { type: 'string', minLength: 1, maxLength: 50 },
+          mobilePhone: { type: 'string', minLength: 1, maxLength: 20 },
         },
       },
       response: {
@@ -112,6 +116,8 @@ const userRoutes: FastifyPluginAsync = async (app): Promise<void> => {
           email: { type: 'string', format: 'email' },
           firstName: { type: 'string', minLength: 1, maxLength: 100, nullable: true },
           lastName: { type: 'string', minLength: 1, maxLength: 100, nullable: true },
+          userName: { type: 'string', minLength: 1, maxLength: 50, nullable: true },
+          mobilePhone: { type: 'string', minLength: 1, maxLength: 20, nullable: true },
         },
       },
       response: {
@@ -138,6 +144,8 @@ const userRoutes: FastifyPluginAsync = async (app): Promise<void> => {
           email: { type: 'string', format: 'email' },
           firstName: { type: 'string', minLength: 1, maxLength: 100, nullable: true },
           lastName: { type: 'string', minLength: 1, maxLength: 100, nullable: true },
+          userName: { type: 'string', minLength: 1, maxLength: 50, nullable: true },
+          mobilePhone: { type: 'string', minLength: 1, maxLength: 20, nullable: true },
         },
       },
       response: {

@@ -15,6 +15,8 @@ describe('modules -> user -> services -> deleteUser', () => {
       email: 'alice@example.com',
       firstName: 'Alice',
       lastName: 'Smith',
+      userName: null,
+      mobilePhone: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     })

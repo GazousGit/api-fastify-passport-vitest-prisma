@@ -1,6 +1,6 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { vi, describe, it, expect, beforeEach, onTestFinished } from 'vitest'
 import Fastify from 'fastify'
-import { onTestFinished } from 'vitest'
+import request from 'supertest'
 import userRoutes from './index.js'
 
 vi.mock('../../modules/user/services/createUser.js')
@@ -22,16 +22,18 @@ const mockUser = {
   email: 'alice@example.com',
   firstName: 'Alice',
   lastName: 'Smith',
+  userName: null,
+  mobilePhone: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 }
 
-async function build() {
+async function setup() {
   const app = Fastify({ logger: false })
   await app.register(userRoutes)
   await app.ready()
   onTestFinished(() => app.close())
-  return app
+  return request(app.server)
 }
 
 beforeEach(() => vi.clearAllMocks())
@@ -40,45 +42,46 @@ describe('routes -> user -> ', () => {
   describe('GET /', () => {
     it('should returns all users with 200', async () => {
       vi.mocked(getAllUsers).mockResolvedValue([mockUser])
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({ method: 'GET', url: '/' })
+      const res = await api.get('/')
 
-      expect(res.statusCode).toBe(200)
-      expect(res.json()).toMatchObject([{ email: 'alice@example.com' }])
+      expect(res.status).toBe(200)
+      expect(res.body).toMatchObject([{ email: 'alice@example.com' }])
+      expect(getAllUsers).toHaveBeenCalled()
     })
 
     it('should returns an empty array when there are no users', async () => {
       vi.mocked(getAllUsers).mockResolvedValue([])
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({ method: 'GET', url: '/' })
+      const res = await api.get('/')
 
-      expect(res.statusCode).toBe(200)
-      expect(res.json()).toEqual([])
+      expect(res.status).toBe(200)
+      expect(res.body).toEqual([])
     })
   })
 
   describe('GET /:id', () => {
     it('should returns the user with 200', async () => {
       vi.mocked(getUserById).mockResolvedValue(mockUser)
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({ method: 'GET', url: '/cuid-1' })
+      const res = await api.get('/cuid-1')
 
-      expect(res.statusCode).toBe(200)
-      expect(res.json()).toMatchObject({ id: 'cuid-1', email: 'alice@example.com' })
+      expect(res.status).toBe(200)
+      expect(res.body).toMatchObject({ id: 'cuid-1', email: 'alice@example.com' })
     })
 
     it('should throw 404 when the service throws a not-found error', async () => {
       vi.mocked(getUserById).mockRejectedValue(
         Object.assign(new Error('not found'), { statusCode: 404 }),
       )
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({ method: 'GET', url: '/unknown' })
+      const res = await api.get('/unknown')
 
-      expect(res.statusCode).toBe(404)
+      expect(res.status).toBe(404)
       expect(getUserById).toHaveBeenCalledWith('unknown')
     })
   })
@@ -86,16 +89,14 @@ describe('routes -> user -> ', () => {
   describe('POST /', () => {
     it('should creates a user and returns 201', async () => {
       vi.mocked(createUser).mockResolvedValue(mockUser)
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({
-        method: 'POST',
-        url: '/',
-        payload: { email: 'alice@example.com', firstName: 'Alice', lastName: 'Smith' },
-      })
+      const res = await api
+        .post('/')
+        .send({ email: 'alice@example.com', firstName: 'Alice', lastName: 'Smith' })
 
-      expect(res.statusCode).toBe(201)
-      expect(res.json()).toMatchObject({ email: 'alice@example.com' })
+      expect(res.status).toBe(201)
+      expect(res.body).toMatchObject({ email: 'alice@example.com' })
       expect(createUser).toHaveBeenCalledWith({
         email: 'alice@example.com',
         firstName: 'Alice',
@@ -104,42 +105,36 @@ describe('routes -> user -> ', () => {
     })
 
     it('should throw 400 for an invalid email', async () => {
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({
-        method: 'POST',
-        url: '/',
-        payload: { email: 'not-an-email' },
-      })
+      const res = await api.post('/').send({ email: 'not-an-email' })
 
-      expect(res.statusCode).toBe(400)
+      expect(res.status).toBe(400)
       expect(createUser).not.toHaveBeenCalled()
     })
 
     it('should throw 400 when email is missing', async () => {
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({ method: 'POST', url: '/', payload: {} })
+      const res = await api.post('/').send({})
 
-      expect(res.statusCode).toBe(400)
+      expect(res.status).toBe(400)
       expect(createUser).not.toHaveBeenCalled()
     })
   })
 
   describe('PUT /:id', () => {
     it('should replaces the user and returns 200', async () => {
-      const updated = { ...mockUser, name: 'Updated' }
+      const updated = { ...mockUser, firstName: 'Updated' }
       vi.mocked(updateUser).mockResolvedValue(updated)
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({
-        method: 'PUT',
-        url: '/cuid-1',
-        payload: { email: 'alice@example.com', firstName: 'Updated' },
-      })
+      const res = await api
+        .put('/cuid-1')
+        .send({ email: 'alice@example.com', firstName: 'Updated' })
 
-      expect(res.statusCode).toBe(200)
-      expect(res.json()).toMatchObject({ firstName: 'Updated' })
+      expect(res.status).toBe(200)
+      expect(res.body).toMatchObject({ firstName: 'Updated' })
       expect(updateUser).toHaveBeenCalledWith('cuid-1', {
         email: 'alice@example.com',
         firstName: 'Updated',
@@ -147,68 +142,52 @@ describe('routes -> user -> ', () => {
     })
 
     it('should throw 400 when email is missing', async () => {
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({
-        method: 'PUT',
-        url: '/cuid-1',
-        payload: { name: 'Updated' },
-      })
+      const res = await api.put('/cuid-1').send({ name: 'Updated' })
 
-      expect(res.statusCode).toBe(400)
+      expect(res.status).toBe(400)
       expect(updateUser).not.toHaveBeenCalled()
     })
 
     it('should throw 400 for an invalid email', async () => {
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({
-        method: 'PUT',
-        url: '/cuid-1',
-        payload: { email: 'bad' },
-      })
+      const res = await api.put('/cuid-1').send({ email: 'bad' })
 
-      expect(res.statusCode).toBe(400)
+      expect(res.status).toBe(400)
       expect(updateUser).not.toHaveBeenCalled()
     })
   })
 
   describe('PATCH /:id', () => {
     it('should partially updates the user and returns 200', async () => {
-      const patched = { ...mockUser, name: 'Patched' }
+      const patched = { ...mockUser, firstName: 'Patched' }
       vi.mocked(patchUser).mockResolvedValue(patched)
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({
-        method: 'PATCH',
-        url: '/cuid-1',
-        payload: { firstName: 'Patched' },
-      })
+      const res = await api.patch('/cuid-1').send({ firstName: 'Patched' })
 
-      expect(res.statusCode).toBe(200)
-      expect(res.json()).toMatchObject({ firstName: 'Patched' })
+      expect(res.status).toBe(200)
+      expect(res.body).toMatchObject({ firstName: 'Patched' })
       expect(patchUser).toHaveBeenCalledWith('cuid-1', { firstName: 'Patched' })
     })
 
     it('should throw 400 for an empty body', async () => {
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({ method: 'PATCH', url: '/cuid-1', payload: {} })
+      const res = await api.patch('/cuid-1').send({})
 
-      expect(res.statusCode).toBe(400)
+      expect(res.status).toBe(400)
       expect(patchUser).not.toHaveBeenCalled()
     })
 
     it('should throw 400 for an invalid email format', async () => {
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({
-        method: 'PATCH',
-        url: '/cuid-1',
-        payload: { email: 'bad' },
-      })
+      const res = await api.patch('/cuid-1').send({ email: 'bad' })
 
-      expect(res.statusCode).toBe(400)
+      expect(res.status).toBe(400)
       expect(patchUser).not.toHaveBeenCalled()
     })
   })
@@ -216,21 +195,21 @@ describe('routes -> user -> ', () => {
   describe('DELETE /:id', () => {
     it('should deletes the user and returns 204', async () => {
       vi.mocked(deleteUser).mockResolvedValue(undefined)
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({ method: 'DELETE', url: '/cuid-1' })
+      const res = await api.delete('/cuid-1')
 
-      expect(res.statusCode).toBe(204)
+      expect(res.status).toBe(204)
       expect(deleteUser).toHaveBeenCalledWith('cuid-1')
     })
 
     it('should throw 400 for an empty id param', async () => {
       vi.mocked(deleteUser).mockResolvedValue(undefined)
-      const app = await build()
+      const api = await setup()
 
-      const res = await app.inject({ method: 'DELETE', url: '/cuid-1' })
+      const res = await api.delete('/cuid-1')
 
-      expect(res.statusCode).toBe(204)
+      expect(res.status).toBe(204)
     })
   })
 })

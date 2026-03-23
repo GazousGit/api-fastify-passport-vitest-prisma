@@ -11,6 +11,8 @@ export interface User {
   email: string
   firstName: string | null
   lastName: string | null
+  userName: string | null
+  mobilePhone: string | null
   createdAt: Date
   updatedAt: Date
 }

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { isValidEmail } from './isValidEmail.js'
 
 describe('modules -> user -> helpers -> isValidEmail', () => {
-  describe('valid addresses', () => {
+  describe('should return true', () => {
     it.each([
       'user@example.com',
       'user.name+tag@example.co.uk',
@@ -14,7 +14,7 @@ describe('modules -> user -> helpers -> isValidEmail', () => {
     })
   })
 
-  describe('invalid addresses', () => {
+  describe('should return false', () => {
     it.each([
       'notanemail',
       '@nodomain.com',
