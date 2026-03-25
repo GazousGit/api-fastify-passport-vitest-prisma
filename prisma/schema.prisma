@@ -4,24 +4,119 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["public", "auth"]
 }
+
+// EMAIL_VERIFICATION and PASSWORD_RESET tokens will be stored in Redis (TTL-based),
 
 model User {
-  id                        String        @id @default(uuid(7)) @db.Uuid
-  email                     String        @unique
-  firstName                 String?
-  lastName                  String?
-  userName                  String?       @unique
-  mobilePhone               String?       @unique
-  createdAt                 DateTime      @default(now())
-  updatedAt                 DateTime      @updatedAt
+  id                  String   @id @default(uuid(7)) @db.Uuid
+  email               String   @unique
+  emailVerified       Boolean  @default(false) @map("email_verified")
+  firstName           String?  @map("first_name")
+  lastName            String?  @map("last_name")
+  userName            String?  @unique @map("user_name")
+  mobilePhone         String?  @unique @map("mobile_phone")
+  mobilePhoneVerified Boolean  @default(false) @map("mobile_phone_verified")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  localAuth     LocalAuth?
+  oauthAccounts OAuthAccount[]
+  sessions      Session[]
+  apiKeys       ApiKey[]
+  totpSecret    TotpSecret?
+  backupCodes   BackupCode[]
 
   @@map("users")
-  accounts                  Account[]
+  @@schema("public")
 }
 
-model Account {
-  id                        String        @id @default(uuid(7)) @db.Uuid
-  userId                    String
-  user                      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+model LocalAuth {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  userId       String   @unique @map("user_id") @db.Uuid
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("local_auth")
+  @@schema("auth")
+}
+
+model OAuthAccount {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String
+  providerAccountId String    @map("provider_account_id")
+  accessToken       String?   @map("access_token")
+  refreshToken      String?   @map("refresh_token")
+  tokenExpiresAt    DateTime? @map("token_expires_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
+  @@schema("auth")
+}
+
+model Session {
+  id        String   @id
+  userId    String?  @map("user_id") @db.Uuid
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      Json     @default("{}")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+  @@schema("auth")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  prefix     String
+  keyHash    String    @unique @map("key_hash")
+  scopes     String[]  @default([])
+  expiresAt  DateTime? @map("expires_at")
+  lastUsedAt DateTime? @map("last_used_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("api_keys")
+  @@schema("auth")
+}
+
+// Stored encrypted (AES-256). The encryption key must live outside the DB (env/KMS).
+// Never store the raw seed.
+model TotpSecret {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  userId        String   @unique @map("user_id") @db.Uuid
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  encryptedSeed String   @map("encrypted_seed")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("totp_secrets")
+  @@schema("auth")
+}
+
+// Each code is hashed (bcrypt/argon2). Raw codes are shown to the user once, then discarded.
+model BackupCode {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String    @map("code_hash")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("backup_codes")
+  @@schema("auth")
 }
