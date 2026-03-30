@@ -6,6 +6,6 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },
-  "include": ["src/**/*.ts", "src/core/env.mts"],
-  "exclude": ["node_modules", "dist", "**/*.unit.ts", "**/*.test.ts", "**/*.spec.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/*.unit.ts", "**/*.spec.ts", "**/*.integration.ts", "**/*.test.ts", "**/*.spec.ts"]
 }

@@ -7,7 +7,12 @@ datasource db {
   schemas  = ["public", "auth"]
 }
 
-// EMAIL_VERIFICATION and PASSWORD_RESET tokens will be stored in Redis (TTL-based),
+enum Role {
+  User
+  Admin
+
+  @@schema("public")
+}
 
 model User {
   id                  String   @id @default(uuid(7)) @db.Uuid
@@ -18,6 +23,7 @@ model User {
   userName            String?  @unique @map("user_name")
   mobilePhone         String?  @unique @map("mobile_phone")
   mobilePhoneVerified Boolean  @default(false) @map("mobile_phone_verified")
+  role                Role     @default(User)
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
@@ -94,8 +100,6 @@ model ApiKey {
   @@schema("auth")
 }
 
-// Stored encrypted (AES-256). The encryption key must live outside the DB (env/KMS).
-// Never store the raw seed.
 model TotpSecret {
   id            String   @id @default(uuid(7)) @db.Uuid
   userId        String   @unique @map("user_id") @db.Uuid
@@ -107,7 +111,6 @@ model TotpSecret {
   @@schema("auth")
 }
 
-// Each code is hashed (bcrypt/argon2). Raw codes are shown to the user once, then discarded.
 model BackupCode {
   id        String    @id @default(uuid(7)) @db.Uuid
   userId    String    @map("user_id") @db.Uuid

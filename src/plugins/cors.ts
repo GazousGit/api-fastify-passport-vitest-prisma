@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin'
 import cors from '@fastify/cors'
 import type { FastifyCorsOptions } from '@fastify/cors'
+import { env } from '../core/env.js'
 
 /**
  * This plugins enables the use of CORS in a Fastify application
@@ -12,7 +13,7 @@ export default fp<FastifyCorsOptions>(async (app) => {
     // Restrict to explicit origin(s) — set ALLOWED_ORIGIN in your environment.
     // Never use `true` in production: it reflects the request Origin back,
     // which bypasses the protection CORS is meant to provide.
-    origin: process.env.ALLOWED_ORIGIN ?? false,
+    origin: env.ALLOWED_ORIGIN ?? false,
 
     // Only expose the methods your API actually uses
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],

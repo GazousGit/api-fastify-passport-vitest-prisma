@@ -8,8 +8,6 @@ import { errorHandler } from './core/errors/index.js'
 
 export interface AppOptions extends FastifyServerOptions, Partial<AutoloadPluginOptions> {}
 
-// Options are consumed by fastify-cli when starting the server.
-// loggerOptions is also used directly when calling Fastify() in code.
 export const options: AppOptions = {
   logger: loggerOptions,
 }
@@ -17,18 +15,17 @@ export const options: AppOptions = {
 const app: FastifyPluginAsync<AppOptions> = async (fastify, opts): Promise<void> => {
   await fastify.register(errorHandler)
 
-  void fastify.register(AutoLoad, {
+  await fastify.register(AutoLoad, {
     dir: fileURLToPath(new URL('./plugins', import.meta.url)),
     options: opts,
-    ignorePattern: /\.unit\.(ts|js)$/,
+    ignorePattern: /\.(unit|spec|integration)\.(ts|js)$/,
   })
 
-  void fastify.register(AutoLoad, {
+  await fastify.register(AutoLoad, {
     dir: fileURLToPath(new URL('./routes', import.meta.url)),
     options: opts,
-    ignorePattern: /\.unit\.(ts|js)$/,
+    ignorePattern: /\.(unit|spec|integration)\.(ts|js)$/,
   })
 }
 
 export default app
-export { app }

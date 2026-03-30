@@ -2,6 +2,7 @@ import { vi, describe, it, expect, beforeEach, onTestFinished } from 'vitest'
 import Fastify from 'fastify'
 import request from 'supertest'
 import userRoutes from './index.js'
+import type { User } from '../../modules/user/type.js'
 
 vi.mock('../../modules/user/services/createUser.js')
 vi.mock('../../modules/user/services/getAllUsers.js')
@@ -17,13 +18,16 @@ import { updateUser } from '../../modules/user/services/updateUser.js'
 import { patchUser } from '../../modules/user/services/patchUser.js'
 import { deleteUser } from '../../modules/user/services/deleteUser.js'
 
-const mockUser = {
+const mockUser: User = {
   id: 'cuid-1',
   email: 'alice@example.com',
+  emailVerified: false,
   firstName: 'Alice',
   lastName: 'Smith',
   userName: null,
   mobilePhone: null,
+  mobilePhoneVerified: false,
+  role: 'User',
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 }
@@ -203,13 +207,15 @@ describe('routes -> user -> ', () => {
       expect(deleteUser).toHaveBeenCalledWith('cuid-1')
     })
 
-    it('should throw 400 for an empty id param', async () => {
-      vi.mocked(deleteUser).mockResolvedValue(undefined)
+    it('should return 404 when the service throws a not-found error', async () => {
+      vi.mocked(deleteUser).mockRejectedValue(
+        Object.assign(new Error('not found'), { statusCode: 404 }),
+      )
       const api = await setup()
 
-      const res = await api.delete('/cuid-1')
+      const res = await api.delete('/unknown-id')
 
-      expect(res.status).toBe(204)
+      expect(res.status).toBe(404)
     })
   })
 })

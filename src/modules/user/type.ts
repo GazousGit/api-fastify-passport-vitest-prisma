@@ -1,4 +1,5 @@
 import type { z } from 'zod'
+import type { Role } from '@prisma/client'
 import type {
   createUserSchema,
   updateUserSchema,
@@ -6,13 +7,18 @@ import type {
   userIdParamSchema,
 } from './model.js'
 
+export type UserRole = Role
+
 export interface User {
   id: string
   email: string
+  emailVerified: boolean
   firstName: string | null
   lastName: string | null
   userName: string | null
   mobilePhone: string | null
+  mobilePhoneVerified: boolean
+  role: UserRole
   createdAt: Date
   updatedAt: Date
 }
