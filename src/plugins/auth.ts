@@ -9,6 +9,9 @@ import { prisma } from '../core/prisma.js'
 import type { User } from '../modules/user/type.js'
 import { setupGoogleStrategy } from '../modules/auth/strategies/google.js'
 import { setupGithubStrategy } from '../modules/auth/strategies/github.js'
+import { setupFacebookStrategy } from '../modules/auth/strategies/facebook.js'
+import { setupTwitterStrategy } from '../modules/auth/strategies/x-twitter.js'
+import { setupDiscordStrategy } from '../modules/auth/strategies/discord.js'
 
 // Plugin order matters: cookie → session → passport
 // Wrapped in a single fp() to guarantee sequential registration
@@ -49,6 +52,18 @@ export default fp(async (app) => {
 
   if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
     setupGithubStrategy()
+  }
+
+  if (env.FACEBOOK_CLIENT_ID && env.FACEBOOK_CLIENT_SECRET) {
+    setupFacebookStrategy()
+  }
+
+  if (env.TWITTER_CLIENT_ID && env.TWITTER_CLIENT_SECRET) {
+    setupTwitterStrategy()
+  }
+
+  if (env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET) {
+    setupDiscordStrategy()
   }
 })
 

@@ -48,3 +48,8 @@ test
 
 convention used for file naming, variable naming (others)
 test files (spec, unit, integration)
+
+IMPORTANT TO DO
+
+- HTTPS
+- Make up my mind about a package to handle Datetime (probably date-fns) and use it for any date soo everything is consistent (shall I stick to UTC everytime ? anything to set in the db (best datetime format to save? remember about the operation gte lte with dates))
