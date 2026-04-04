@@ -5,10 +5,10 @@ import { oauthHandler } from './helpers/oauthHandler.js'
 
 const linkedinRoutes: FastifyPluginAsync = async (app) => {
   if (!env.LINKEDIN_CLIENT_ID || !env.LINKEDIN_CLIENT_SECRET) {
-    app.get('/linkedin', async (_request, reply) =>
+    app.get('/linkedin', { schema: { tags: ['oauth-linkedin'], summary: 'Initiate LinkedIn OAuth flow' } }, async (_request, reply) =>
       reply.code(501).send({ statusCode: 501, error: 'Not Implemented', message: 'LinkedIn OAuth is not configured' }),
     )
-    app.get('/linkedin/callback', async (_request, reply) =>
+    app.get('/linkedin/callback', { schema: { tags: ['oauth-linkedin'], summary: 'LinkedIn OAuth callback' } }, async (_request, reply) =>
       reply.code(501).send({ statusCode: 501, error: 'Not Implemented', message: 'LinkedIn OAuth is not configured' }),
     )
     return
@@ -16,13 +16,13 @@ const linkedinRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/linkedin',
-    { schema: { tags: ['auth'], summary: 'Initiate LinkedIn OAuth flow' } },
+    { schema: { tags: ['oauth-linkedin'], summary: 'Initiate LinkedIn OAuth flow' } },
     oauthHandler(authenticator.authenticate('linkedin', { scope: ['openid', 'profile', 'email'] })),
   )
 
   app.get(
     '/linkedin/callback',
-    { schema: { tags: ['auth'], summary: 'LinkedIn OAuth callback' } },
+    { schema: { tags: ['oauth-linkedin'], summary: 'LinkedIn OAuth callback' } },
     oauthHandler(authenticator.authenticate('linkedin', { failureRedirect: '/auth/login', successRedirect: '/' })),
   )
 }

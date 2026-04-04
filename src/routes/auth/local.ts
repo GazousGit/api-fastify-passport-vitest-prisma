@@ -85,6 +85,7 @@ const localAuthRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         tags: ['auth'],
         summary: 'Logout current session',
+        security: [{ cookieAuth: [] }],
         response: { 204: { type: 'null' } },
       },
     },

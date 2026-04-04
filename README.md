@@ -57,7 +57,7 @@ reddit -> Had to ask API access to admin in order to get credentials, awaiting a
 
 paypal -> dev portal has issues, I can't save the email permission nor the callback URL
 
-instagram -> API had major changes and getting a ClientID/Secret was already painfull (nothing looks like it use to couple months ago) the real deal breaker was that the callback URL http://localhost/auth/instagram/callback was not accepted
+instagram -> API had major changes and getting a ClientID/Secret was already painfull (nothing looks like it use to a couple months ago) the real deal breaker was that the callback URL http://localhost/auth/instagram/callback was not accepted
 
 ## Learn More
 
@@ -78,7 +78,13 @@ using the function approach (not class, etc..)
 
 IMPORTANT THINGS TO DO
 
-- HTTPS
 - Local auth needs 2FA! (linking account sounds risky but we could add a 2fa email uppon successful login with oauth so email get confirmed, in case oauth provider is compromised)
-- Make up my mind about a package to handle Datetime (probably date-fns) and use it for any date soo everything is consistent (shall I stick to UTC everytime ? anything to set in the db (best datetime format to save? remember about the operation gte lte with dates))
-- ApiKey
+
+TODO Note something about hooks
+Those following hooks are not meant to be "smart", they just serve as an example (It all depends on what you would do with apiKey, this could just be a full admin control or an user may create/delete their own apiKey but hey, this is just a demo project so I don't care for now)
+
+- createApiKey requires user to be authenticated
+- renewApiKey requires to be an admin (next step will be to have an user with 2fa verified, not an admin)
+- deleteApiKey & revokeApiKey is for admin only
+- updateUser
+- route /checkApiKey to verify validity

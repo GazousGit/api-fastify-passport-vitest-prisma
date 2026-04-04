@@ -5,10 +5,10 @@ import { oauthHandler } from './helpers/oauthHandler.js'
 
 const amazonRoutes: FastifyPluginAsync = async (app) => {
   if (!env.AMAZON_CLIENT_ID || !env.AMAZON_CLIENT_SECRET) {
-    app.get('/amazon', async (_request, reply) =>
+    app.get('/amazon', { schema: { tags: ['oauth-amazon'], summary: 'Initiate Amazon OAuth flow' } }, async (_request, reply) =>
       reply.code(501).send({ statusCode: 501, error: 'Not Implemented', message: 'Amazon OAuth is not configured' }),
     )
-    app.get('/amazon/callback', async (_request, reply) =>
+    app.get('/amazon/callback', { schema: { tags: ['oauth-amazon'], summary: 'Amazon OAuth callback' } }, async (_request, reply) =>
       reply.code(501).send({ statusCode: 501, error: 'Not Implemented', message: 'Amazon OAuth is not configured' }),
     )
     return
@@ -16,13 +16,13 @@ const amazonRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/amazon',
-    { schema: { tags: ['auth'], summary: 'Initiate Amazon OAuth flow' } },
+    { schema: { tags: ['oauth-amazon'], summary: 'Initiate Amazon OAuth flow' } },
     oauthHandler(authenticator.authenticate('amazon', { scope: ['profile'] })),
   )
 
   app.get(
     '/amazon/callback',
-    { schema: { tags: ['auth'], summary: 'Amazon OAuth callback' } },
+    { schema: { tags: ['oauth-amazon'], summary: 'Amazon OAuth callback' } },
     oauthHandler(authenticator.authenticate('amazon', { failureRedirect: '/auth/login', successRedirect: '/' })),
   )
 }

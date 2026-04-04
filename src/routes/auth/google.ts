@@ -16,13 +16,13 @@ const googleRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/google',
-    { schema: { tags: ['auth'], summary: 'Initiate Google OAuth flow' } },
+    { schema: { tags: ['oauth-google'], summary: 'Initiate Google OAuth flow' } },
     oauthHandler(authenticator.authenticate('google', { scope: ['email', 'profile'] })),
   )
 
   app.get(
     '/google/callback',
-    { schema: { tags: ['auth'], summary: 'Google OAuth callback' } },
+    { schema: { tags: ['oauth-google'], summary: 'Google OAuth callback' } },
     oauthHandler(authenticator.authenticate('google', { failureRedirect: '/auth/login', successRedirect: '/' })),
   )
 }
