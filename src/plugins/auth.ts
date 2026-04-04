@@ -17,6 +17,7 @@ import { setupAppleStrategy } from '../modules/auth/strategies/apple.js'
 import { setupMicrosoftStrategy } from '../modules/auth/strategies/microsoft.js'
 import { setupRedditStrategy } from '../modules/auth/strategies/reddit.js'
 import { setupPayPalStrategy } from '../modules/auth/strategies/paypal.js'
+import { setupLinkedInStrategy } from '../modules/auth/strategies/linkedin.js'
 
 // Plugin order matters: cookie → session → passport
 // Wrapped in a single fp() to guarantee sequential registration
@@ -89,6 +90,10 @@ export default fp(async (app) => {
 
   if (env.PAYPAL_CLIENT_ID && env.PAYPAL_CLIENT_SECRET) {
     setupPayPalStrategy()
+  }
+
+  if (env.LINKEDIN_CLIENT_ID && env.LINKEDIN_CLIENT_SECRET) {
+    setupLinkedInStrategy()
   }
 })
 

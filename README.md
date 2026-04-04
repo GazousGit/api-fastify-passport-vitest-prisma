@@ -35,6 +35,30 @@ For production mode
 
 Run the test cases.
 
+## OAuth providers
+
+| Provider       | Tested | OAuth version | Package                         | Notes                           |
+| -------------- | ------ | ------------- | ------------------------------- | ------------------------------- |
+| 🔵 Google      | ✅     | 2.0           | `passport-google-oauth20`       |                                 |
+| 🐙 GitHub      | ✅     | 2.0           | `passport-github2`              |                                 |
+| 🔷 Facebook    | ✅     | 2.0           | `passport-facebook`             | Add email permission            |
+| 🐦 Twitter / X | ✅     | 1.0a          | `passport-twitter`              | Legacy protocol                 |
+| 🟣 Discord     | ✅     | 2.0           | `passport-discord`              |                                 |
+| 🪟 Microsoft   | ✅     | 2.0           | `passport-microsoft`            | Requires Azure account          |
+| 🍎 Apple       | ❌     | 2.0 (OIDC)    | `passport-apple`                | Requires paid Apple Dev account |
+| 📦 Amazon      | ✅     | 2.0           | `passport-amazon`               |                                 |
+| 🤖 Reddit      | ❌     | 2.0           | `passport-oauth2` (custom)      | Requires API access from admins |
+| 💳 PayPal      | ⚠️     | 2.0 (OIDC)    | `passport-paypal-openidconnect` | Add email permission            |
+| 🔗 LinkedIn    | ✅     | OAuth 2.0     | `passport-linkedin-oauth2`      | Add email permission            |
+
+apple -> require paiement, and it's not cheap
+
+reddit -> Had to ask API access to admin in order to get credentials, awaiting approve
+
+paypal -> dev portal has issues, I can't save the email permission nor the callback URL
+
+instagram -> API had major changes and getting a ClientID/Secret was already painfull (nothing looks like it use to couple months ago) the real deal breaker was that the callback URL http://localhost/auth/instagram/callback was not accepted
+
 ## Learn More
 
 To learn Fastify, check out the [Fastify documentation](https://fastify.dev/docs/latest/).
@@ -51,18 +75,6 @@ test
 TODO convention used for file naming, variable naming (others)
 test files (spec, unit, integration)
 using the function approach (not class, etc..)
-
-Add a small table with list of oauth provider :
-column name + icon
-column tested (with a green check)
-column oauth version
-column package needed
-column comment
-apple comment -> require paiement
-microsoft comment -> reuires azure account
-facebook comment -> add email permission when getting oauth credentials
-reddit -> Have to ask API access to admin in order to get credentials
-paypal -> do not forget to set email permission (you can even choose to check for verified email or not) dev portal has issues, I can't save the email permission nor the callback URL so I can't test it for now
 
 IMPORTANT THINGS TO DO
 
