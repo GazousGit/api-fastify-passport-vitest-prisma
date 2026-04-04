@@ -16,6 +16,7 @@ import { setupAmazonStrategy } from '../modules/auth/strategies/amazon.js'
 import { setupAppleStrategy } from '../modules/auth/strategies/apple.js'
 import { setupMicrosoftStrategy } from '../modules/auth/strategies/microsoft.js'
 import { setupRedditStrategy } from '../modules/auth/strategies/reddit.js'
+import { setupPayPalStrategy } from '../modules/auth/strategies/paypal.js'
 
 // Plugin order matters: cookie → session → passport
 // Wrapped in a single fp() to guarantee sequential registration
@@ -84,6 +85,10 @@ export default fp(async (app) => {
 
   if (env.REDDIT_CLIENT_ID && env.REDDIT_CLIENT_SECRET) {
     setupRedditStrategy()
+  }
+
+  if (env.PAYPAL_CLIENT_ID && env.PAYPAL_CLIENT_SECRET) {
+    setupPayPalStrategy()
   }
 })
 
