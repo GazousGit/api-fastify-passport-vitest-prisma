@@ -13,7 +13,12 @@ export function setupGithubStrategy() {
         callbackURL: `${env.APP_URL}/auth/github/callback`,
         scope: ['user:email'],
       },
-      async (_accessToken: string, _refreshToken: string, profile: Profile, done: (err: Error | null, user?: unknown) => void) => {
+      async (
+        _accessToken: string,
+        _refreshToken: string,
+        profile: Profile,
+        done: (err: Error | null, user?: unknown) => void,
+      ) => {
         try {
           type GithubEmail = { value: string; primary: boolean; verified: boolean }
           const emails = profile.emails as GithubEmail[] | undefined

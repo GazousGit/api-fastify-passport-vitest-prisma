@@ -1,11 +1,20 @@
 {
   "extends": "./node_modules/fastify-tsconfig/tsconfig.json",
   "compilerOptions": {
+    "rootDir": "./src",
     "outDir": "dist",
     "sourceMap": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.unit.ts", "**/*.spec.ts", "**/*.integration.ts", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.unit.ts",
+    "**/*.spec.ts",
+    "**/*.integration.ts",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }

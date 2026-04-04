@@ -12,6 +12,10 @@ import { setupGithubStrategy } from '../modules/auth/strategies/github.js'
 import { setupFacebookStrategy } from '../modules/auth/strategies/facebook.js'
 import { setupTwitterStrategy } from '../modules/auth/strategies/x-twitter.js'
 import { setupDiscordStrategy } from '../modules/auth/strategies/discord.js'
+import { setupAmazonStrategy } from '../modules/auth/strategies/amazon.js'
+import { setupAppleStrategy } from '../modules/auth/strategies/apple.js'
+import { setupMicrosoftStrategy } from '../modules/auth/strategies/microsoft.js'
+import { setupRedditStrategy } from '../modules/auth/strategies/reddit.js'
 
 // Plugin order matters: cookie → session → passport
 // Wrapped in a single fp() to guarantee sequential registration
@@ -64,6 +68,22 @@ export default fp(async (app) => {
 
   if (env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET) {
     setupDiscordStrategy()
+  }
+
+  if (env.AMAZON_CLIENT_ID && env.AMAZON_CLIENT_SECRET) {
+    setupAmazonStrategy()
+  }
+
+  if (env.APPLE_CLIENT_ID && env.APPLE_TEAM_ID && env.APPLE_KEY_ID && env.APPLE_PRIVATE_KEY) {
+    setupAppleStrategy()
+  }
+
+  if (env.MICROSOFT_CLIENT_ID && env.MICROSOFT_CLIENT_SECRET) {
+    setupMicrosoftStrategy()
+  }
+
+  if (env.REDDIT_CLIENT_ID && env.REDDIT_CLIENT_SECRET) {
+    setupRedditStrategy()
   }
 })
 
