@@ -1,51 +1,14 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterAll } from 'vitest'
 import { prisma } from '../../../core/prisma.js'
 import { findOrCreateOAuthUser } from './oauth.js'
-import type { User, UserRole } from '../../user/type.js'
 
-vi.mock('../../../core/prisma.js', () => ({
-  prisma: {
-    oAuthAccount: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      create: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      create: vi.fn(),
-    },
-  },
-}))
+beforeEach(async () => {
+  await prisma.user.deleteMany()
+})
 
-const mockRole: UserRole = 'User'
-
-const mockUser: User = {
-  id: 'uuid-1',
-  email: 'alice@example.com',
-  emailVerified: false,
-  firstName: null,
-  lastName: null,
-  userName: null,
-  mobilePhone: null,
-  mobilePhoneVerified: false,
-  role: mockRole,
-  createdAt: new Date('2024-01-01'),
-  updatedAt: new Date('2024-01-01'),
-}
-
-const mockOAuthAccount = {
-  id: 'oauth-1',
-  userId: 'uuid-1',
-  provider: 'google',
-  providerAccountId: 'google-123',
-  accessToken: 'old_token',
-  refreshToken: null,
-  tokenExpiresAt: null,
-  createdAt: new Date('2024-01-01'),
-  updatedAt: new Date('2024-01-01'),
-  user: mockUser,
-}
+afterAll(async () => {
+  await prisma.$disconnect()
+})
 
 const googleInput = {
   provider: 'google',
@@ -55,106 +18,95 @@ const googleInput = {
   accessToken: 'new_token',
 }
 
-beforeEach(() => vi.clearAllMocks())
-
 describe('modules -> auth -> services -> findOrCreateOAuthUser', () => {
   describe('existing OAuthAccount', () => {
     it('should return the linked user and refresh the tokens', async () => {
-      vi.mocked(prisma.oAuthAccount.findUnique).mockResolvedValue(mockOAuthAccount)
-      vi.mocked(prisma.oAuthAccount.update).mockResolvedValue(mockOAuthAccount)
-
-      const result = await findOrCreateOAuthUser(googleInput)
-
-      expect(prisma.oAuthAccount.update).toHaveBeenCalledWith({
-        where: { id: 'oauth-1' },
-        data: { accessToken: 'new_token', refreshToken: undefined, tokenExpiresAt: undefined },
+      const user = await prisma.user.create({
+        data: {
+          email: 'alice@example.com',
+          oauthAccounts: {
+            create: {
+              provider: 'google',
+              providerAccountId: 'google-123',
+              accessToken: 'old_token',
+            },
+          },
+        },
       })
-      expect(prisma.user.findUnique).not.toHaveBeenCalled()
-      expect(result).toEqual(mockUser)
+
+      const result = await findOrCreateOAuthUser({
+        ...googleInput,
+        accessToken: 'refreshed_token',
+      })
+
+      expect(result.id).toBe(user.id)
+      const account = await prisma.oAuthAccount.findUnique({
+        where: {
+          provider_providerAccountId: {
+            provider: 'google',
+            providerAccountId: 'google-123',
+          },
+        },
+      })
+      expect(account!.accessToken).toBe('refreshed_token')
     })
   })
 
   describe('email matches an existing user', () => {
-    it('should link the provider and return the user when email is already verified', async () => {
-      const verifiedUser: User = { ...mockUser, emailVerified: true }
-      vi.mocked(prisma.oAuthAccount.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(verifiedUser)
-      vi.mocked(prisma.oAuthAccount.create).mockResolvedValue(mockOAuthAccount)
+    it('should link the provider and return the user', async () => {
+      await prisma.user.create({ data: { email: 'alice@example.com', emailVerified: true } })
 
       const result = await findOrCreateOAuthUser({ ...googleInput, emailVerified: true })
 
-      expect(prisma.oAuthAccount.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          userId: 'uuid-1',
-          provider: 'google',
-          providerAccountId: 'google-123',
-        }),
+      expect(result.email).toBe('alice@example.com')
+      const account = await prisma.oAuthAccount.findUnique({
+        where: {
+          provider_providerAccountId: { provider: 'google', providerAccountId: 'google-123' },
+        },
       })
-      expect(prisma.user.update).not.toHaveBeenCalled()
-      expect(result).toEqual(verifiedUser)
+      expect(account).not.toBeNull()
     })
 
     it('should mark email as verified when the provider confirms it and the user has not', async () => {
-      const updatedUser: User = { ...mockUser, emailVerified: true }
-      vi.mocked(prisma.oAuthAccount.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser) // emailVerified: false
-      vi.mocked(prisma.oAuthAccount.create).mockResolvedValue(mockOAuthAccount)
-      vi.mocked(prisma.user.update).mockResolvedValue(updatedUser)
+      await prisma.user.create({ data: { email: 'alice@example.com', emailVerified: false } })
 
       const result = await findOrCreateOAuthUser({ ...googleInput, emailVerified: true })
 
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: 'uuid-1' },
-        data: { emailVerified: true },
-      })
-      expect(result).toEqual(updatedUser)
+      expect(result.emailVerified).toBe(true)
+      const updated = await prisma.user.findUnique({ where: { email: 'alice@example.com' } })
+      expect(updated!.emailVerified).toBe(true)
     })
 
-    it('should not update email verification when the provider does not confirm it', async () => {
-      vi.mocked(prisma.oAuthAccount.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser) // emailVerified: false
-      vi.mocked(prisma.oAuthAccount.create).mockResolvedValue(mockOAuthAccount)
+    it('should not update emailVerified when the provider does not confirm it', async () => {
+      await prisma.user.create({ data: { email: 'alice@example.com', emailVerified: false } })
 
       const result = await findOrCreateOAuthUser({ ...googleInput, emailVerified: false })
 
-      expect(prisma.user.update).not.toHaveBeenCalled()
-      expect(result).toEqual(mockUser)
+      expect(result.emailVerified).toBe(false)
     })
   })
 
   describe('no matching account or email', () => {
     it('should create a new user with an OAuthAccount', async () => {
-      vi.mocked(prisma.oAuthAccount.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.user.create).mockResolvedValue(mockUser)
-
       const result = await findOrCreateOAuthUser(googleInput)
 
-      expect(prisma.user.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          email: 'alice@example.com',
-          emailVerified: false,
-          oauthAccounts: {
-            create: expect.objectContaining({
-              provider: 'google',
-              providerAccountId: 'google-123',
-            }),
-          },
-        }),
+      expect(result.email).toBe('alice@example.com')
+      expect(await prisma.user.count()).toBe(1)
+      const account = await prisma.oAuthAccount.findUnique({
+        where: {
+          provider_providerAccountId: { provider: 'google', providerAccountId: 'google-123' },
+        },
       })
-      expect(result).toEqual(mockUser)
+      expect(account).not.toBeNull()
     })
 
     it('should generate a synthetic email when none is provided', async () => {
-      vi.mocked(prisma.oAuthAccount.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.user.create).mockResolvedValue(mockUser)
-
-      await findOrCreateOAuthUser({ provider: 'github', providerAccountId: 'gh-456' })
-
-      expect(prisma.user.findUnique).not.toHaveBeenCalled()
-      expect(prisma.user.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ email: 'github.gh-456@oauth.local' }),
+      const result = await findOrCreateOAuthUser({
+        provider: 'github',
+        providerAccountId: 'gh-456',
       })
+
+      expect(result.email).toBe('github.gh-456@oauth.local')
     })
   })
 })

@@ -61,20 +61,37 @@ const localAuthRoutes: FastifyPluginAsync = async (app) => {
           },
         },
         response: {
-          200: { type: 'object', properties: { id: { type: 'string' }, email: { type: 'string' } } },
+          200: {
+            oneOf: [
+              { type: 'object', properties: { id: { type: 'string' }, email: { type: 'string' } }, required: ['id', 'email'] },
+              {
+                type: 'object',
+                properties: {
+                  twoFactorRequired: { type: 'boolean', enum: [true] },
+                  pendingToken: { type: 'string' },
+                  methods: { type: 'array', items: { type: 'string', enum: ['totp', 'email', 'backup'] } },
+                },
+                required: ['twoFactorRequired', 'pendingToken', 'methods'],
+              },
+            ],
+          },
           401: errorSchema,
         },
       },
     },
     async (request, reply) => {
-      const user = await login(request.body.email, request.body.password)
+      const result = await login(request.body.email, request.body.password)
 
-      if (!user) {
+      if (!result) {
         return reply.code(401).send({ statusCode: 401, error: 'Unauthorized', message: 'Invalid email or password' })
       }
 
-      await request.logIn(user)
-      return reply.send({ id: user.id, email: user.email })
+      if (result.twoFactorRequired) {
+        return reply.send(result)
+      }
+
+      await request.logIn(result.user)
+      return reply.send({ id: result.user.id, email: result.user.email })
     },
   )
 

@@ -78,7 +78,15 @@ using the function approach (not class, etc..)
 
 IMPORTANT THINGS TO DO
 
+- Move the constant (especialy the exported ones) in the constant.ts file
+  -PENDING_2FA_PREFIX
+- Add tests to register/login making sure weird email address are fine (uppercase stuff and all) maybe add some good tests to the REGEX
+- What else can be regex ?
+- Should we add a phone library (awesome-phonenumber maybe ?) and add a mobileCountry so it can be used to determine validity of the phone
 - Local auth needs 2FA! (linking account sounds risky but we could add a 2fa email uppon successful login with oauth so email get confirmed, in case oauth provider is compromised)
+- Add some code conventions (maybe in a md file somewhere)
+  - variable naming (boolean, etc)
+  - review eslint/prettier rules (max char per line of code for example)
 
 TODO Note something about hooks
 Those following hooks are not meant to be "smart", they just serve as an example (It all depends on what you would do with apiKey, this could just be a full admin control or an user may create/delete their own apiKey but hey, this is just a demo project so I don't care for now)

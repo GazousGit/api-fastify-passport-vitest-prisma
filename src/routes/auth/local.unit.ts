@@ -106,7 +106,7 @@ describe('routes -> auth -> local', () => {
 
   describe('POST /auth/login', () => {
     it('should return 200 with user data on valid credentials', async () => {
-      vi.mocked(login).mockResolvedValue(mockUser)
+      vi.mocked(login).mockResolvedValue({ twoFactorRequired: false, user: mockUser })
       const api = await setup()
 
       const res = await api

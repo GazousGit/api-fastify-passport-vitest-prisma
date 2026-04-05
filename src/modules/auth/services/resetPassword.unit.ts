@@ -1,110 +1,70 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest'
-import type { UserRole } from '../../../modules/user/type.js'
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest'
 import { prisma } from '../../../core/prisma.js'
 import { redis } from '../../../core/redis.js'
+import { register } from './register.js'
 import { requestPasswordReset, resetPassword } from './resetPassword.js'
+import argon2 from 'argon2'
 
-vi.mock('../../../core/prisma.js', () => ({
-  prisma: {
-    user: { findUnique: vi.fn() },
-    localAuth: { update: vi.fn() },
-  },
-}))
+beforeAll(async () => {
+  if (!redis.isOpen) await redis.connect()
+})
 
-vi.mock('../../../core/redis.js', () => ({
-  redis: { set: vi.fn(), get: vi.fn(), del: vi.fn() },
-}))
+beforeEach(async () => {
+  await redis.flushDb()
+  await prisma.user.deleteMany()
+})
 
-vi.mock('argon2', () => ({
-  default: { hash: vi.fn().mockResolvedValue('new_hashed_password') },
-}))
-
-vi.mock('node:crypto', () => ({
-  randomBytes: vi.fn().mockReturnValue({ toString: () => 'mocked_token_hex' }),
-}))
-
-const mockRole: UserRole = 'User'
-
-const mockUser = {
-  id: 'uuid-1',
-  email: 'alice@example.com',
-  emailVerified: true,
-  firstName: null,
-  lastName: null,
-  userName: null,
-  mobilePhone: null,
-  mobilePhoneVerified: false,
-  role: mockRole,
-  createdAt: new Date('2024-01-01'),
-  updatedAt: new Date('2024-01-01'),
-  localAuth: { passwordHash: 'old_hash' },
-}
-
-beforeEach(() => vi.clearAllMocks())
+afterAll(async () => {
+  await redis.quit()
+  await prisma.$disconnect()
+})
 
 describe('modules -> auth -> services -> requestPasswordReset', () => {
-  it('should store a token in Redis and return it', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser)
-    vi.mocked(redis.set).mockResolvedValue('OK')
+  it('should store a Redis token and return it', async () => {
+    await register({ email: 'alice@example.com', password: 'Password1!' })
 
     const token = await requestPasswordReset('alice@example.com')
 
-    expect(redis.set).toHaveBeenCalledWith(
-      expect.stringContaining('password_reset:'),
-      'uuid-1',
-      { EX: 3600 },
-    )
-    expect(token).toBe('mocked_token_hex')
+    expect(token).toHaveLength(64) // 32 bytes hex
+    const stored = await redis.get(`password_reset:${token}`)
+    expect(stored).toBeDefined()
   })
 
-  it('should return empty string silently when email not found', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
-
+  it('should return empty string silently when email is not found', async () => {
     const token = await requestPasswordReset('unknown@example.com')
 
     expect(token).toBe('')
-    expect(redis.set).not.toHaveBeenCalled()
+  })
+
+  it('should return empty string when user has no local auth (OAuth-only)', async () => {
+    await prisma.user.create({ data: { email: 'oauth@example.com' } })
+
+    const token = await requestPasswordReset('oauth@example.com')
+
+    expect(token).toBe('')
   })
 })
 
 describe('modules -> auth -> services -> resetPassword', () => {
-  it('should update password hash and delete token', async () => {
-    vi.mocked(redis.get).mockResolvedValue('uuid-1')
-    vi.mocked(prisma.localAuth.update).mockResolvedValue({
-      id: 'auth-1',
-      userId: 'uuid-1',
-      passwordHash: 'new_hashed_password',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-    vi.mocked(redis.del).mockResolvedValue(1)
+  it('should update the password hash and delete the token', async () => {
+    const user = await register({ email: 'alice@example.com', password: 'Password1!' })
+    const token = await requestPasswordReset('alice@example.com')
 
-    await resetPassword('valid_token', 'NewPassword1!')
+    await resetPassword(token, 'NewPassword2@')
 
-    expect(prisma.localAuth.update).toHaveBeenCalledWith({
-      where: { userId: 'uuid-1' },
-      data: { passwordHash: 'new_hashed_password' },
-    })
-    expect(redis.del).toHaveBeenCalledWith('password_reset:valid_token')
+    const localAuth = await prisma.localAuth.findUnique({ where: { userId: user.id } })
+    const valid = await argon2.verify(localAuth!.passwordHash, 'NewPassword2@')
+    expect(valid).toBe(true)
+    expect(await redis.get(`password_reset:${token}`)).toBeNull()
   })
 
   it('should throw 400 for an invalid or expired token', async () => {
-    vi.mocked(redis.get).mockResolvedValue(null)
-
-    await expect(resetPassword('expired_token', 'NewPassword1!')).rejects.toMatchObject({
+    await expect(resetPassword('bad_token', 'NewPassword2@')).rejects.toMatchObject({
       statusCode: 400,
-      message: 'Invalid or expired reset token',
     })
-
-    expect(prisma.localAuth.update).not.toHaveBeenCalled()
   })
 
   it('should throw 400 for a weak new password', async () => {
-    await expect(resetPassword('valid_token', 'weak')).rejects.toMatchObject({
-      statusCode: 400,
-    })
-
-    expect(redis.get).not.toHaveBeenCalled()
-    expect(prisma.localAuth.update).not.toHaveBeenCalled()
+    await expect(resetPassword('any_token', 'weak')).rejects.toMatchObject({ statusCode: 400 })
   })
 })

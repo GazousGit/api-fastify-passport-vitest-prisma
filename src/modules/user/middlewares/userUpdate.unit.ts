@@ -17,7 +17,10 @@ beforeEach(() => vi.clearAllMocks())
 describe('userUpdate', () => {
   it('passes for valid params and body', async () => {
     const reply = makeReply()
-    await userUpdate(makeRequest({ id: 'cuid-1' }, { email: 'alice@example.com', firstName: 'Alice' }), reply)
+    await userUpdate(
+      makeRequest({ id: 'cuid-1' }, { email: 'alice@example.com', firstName: 'Alice' }),
+      reply,
+    )
     expect(reply.send).not.toHaveBeenCalled()
   })
 

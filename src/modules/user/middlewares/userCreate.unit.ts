@@ -23,7 +23,10 @@ describe('userCreate', () => {
 
   it('passes for a valid body with email and names', async () => {
     const reply = makeReply()
-    await userCreate(makeRequest({ email: 'alice@example.com', firstName: 'Alice', lastName: 'Smith' }), reply)
+    await userCreate(
+      makeRequest({ email: 'alice@example.com', firstName: 'Alice', lastName: 'Smith' }),
+      reply,
+    )
     expect(reply.send).not.toHaveBeenCalled()
   })
 

@@ -1,45 +1,44 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterAll } from 'vitest'
 import { prisma } from '../../../core/prisma.js'
 import { register } from './register.js'
-import type { User } from '../../../modules/user/type.js'
 
-vi.mock('../../../core/prisma.js', () => ({
-  prisma: { user: { create: vi.fn() } },
-}))
+beforeEach(async () => {
+  await prisma.user.deleteMany()
+})
 
-vi.mock('argon2', () => ({
-  default: { hash: vi.fn().mockResolvedValue('hashed_password') },
-}))
-
-const mockUser: User = {
-  id: 'uuid-1',
-  email: 'alice@example.com',
-  emailVerified: false,
-  firstName: 'Alice',
-  lastName: null,
-  userName: null,
-  mobilePhone: null,
-  mobilePhoneVerified: false,
-  role: 'User' as const,
-  createdAt: new Date('2024-01-01'),
-  updatedAt: new Date('2024-01-01'),
-}
-
-beforeEach(() => vi.clearAllMocks())
+afterAll(async () => {
+  await prisma.$disconnect()
+})
 
 describe('modules -> auth -> services -> register', () => {
-  it('should create a user with a hashed password', async () => {
-    vi.mocked(prisma.user.create).mockResolvedValue(mockUser)
+  it('should persist user and localAuth with a hashed password', async () => {
+    const user = await register({ email: 'alice@example.com', password: 'Password1!' })
 
-    const result = await register({ email: 'alice@example.com', password: 'Password1!' })
+    expect(user.email).toBe('alice@example.com')
+    expect(user.id).toBeDefined()
 
-    expect(prisma.user.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        email: 'alice@example.com',
-        localAuth: { create: { passwordHash: 'hashed_password' } },
-      }),
+    const localAuth = await prisma.localAuth.findUnique({ where: { userId: user.id } })
+    expect(localAuth).not.toBeNull()
+    expect(localAuth!.passwordHash).not.toBe('Password1!')
+    expect(localAuth!.passwordHash).toMatch(/^\$argon2/)
+  })
+
+  it('should persist optional fields when provided', async () => {
+    const user = await register({
+      email: 'alice@example.com',
+      password: 'Password1!',
+      firstName: 'Alice',
+      lastName: 'Smith',
     })
-    expect(result).toEqual(mockUser)
+
+    expect(user.firstName).toBe('Alice')
+    expect(user.lastName).toBe('Smith')
+  })
+
+  it('should throw on duplicate email', async () => {
+    await register({ email: 'alice@example.com', password: 'Password1!' })
+
+    await expect(register({ email: 'alice@example.com', password: 'Password1!' })).rejects.toThrow()
   })
 
   it('should throw 400 for a weak password', async () => {
@@ -47,6 +46,6 @@ describe('modules -> auth -> services -> register', () => {
       statusCode: 400,
     })
 
-    expect(prisma.user.create).not.toHaveBeenCalled()
+    expect(await prisma.user.count()).toBe(0)
   })
 })

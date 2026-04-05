@@ -60,6 +60,7 @@
     "fastify": "^5.8.4",
     "fastify-cli": "^8.0.0",
     "fastify-plugin": "^5.0.0",
+    "otplib": "^13.4.0",
     "passport-amazon": "^1.0.0",
     "passport-apple": "^2.0.2",
     "passport-discord": "^0.1.4",
