@@ -1,4 +1,5 @@
 import { vi, describe, it, expect, beforeEach, onTestFinished } from 'vitest'
+import { Conflict } from '../../core/errors/index.js'
 import Fastify from 'fastify'
 import request from 'supertest'
 import localAuthRoutes from './local.js'
@@ -92,7 +93,7 @@ describe('routes -> auth -> local', () => {
 
     it('should propagate errors thrown by the register service', async () => {
       vi.mocked(register).mockRejectedValue(
-        Object.assign(new Error('Email already in use'), { statusCode: 409 }),
+        new Conflict('Email already in use'),
       )
       const api = await setup()
 

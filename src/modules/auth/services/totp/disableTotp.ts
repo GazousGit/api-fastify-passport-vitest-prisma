@@ -1,12 +1,13 @@
 import { verify } from 'otplib'
 import { prisma } from '../../../../core/prisma.js'
+import { BadRequest } from '../../../../core/errors/index.js'
 
 export async function disableTotp(userId: string, code: string): Promise<void> {
   const record = await prisma.totpSecret.findUnique({ where: { userId } })
-  if (!record) throw Object.assign(new Error('TOTP is not enabled'), { statusCode: 400 })
+  if (!record) throw new BadRequest('TOTP is not enabled')
 
   const { valid } = await verify({ token: code, secret: record.encryptedSeed })
-  if (!valid) throw Object.assign(new Error('Invalid TOTP code'), { statusCode: 400 })
+  if (!valid) throw new BadRequest('Invalid TOTP code')
 
   await prisma.$transaction([
     prisma.totpSecret.delete({ where: { userId } }),

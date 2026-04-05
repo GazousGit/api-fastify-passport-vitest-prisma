@@ -1,4 +1,5 @@
 import { vi, describe, it, expect, beforeEach, onTestFinished } from 'vitest'
+import { BadRequest } from '../../core/errors/index.js'
 import Fastify from 'fastify'
 import request from 'supertest'
 import twoFactorRoutes from './two-factor.js'
@@ -224,7 +225,7 @@ describe('routes -> auth -> two-factor', () => {
 
     it('should return 400 for an invalid TOTP code', async () => {
       vi.mocked(enableTotp).mockRejectedValue(
-        Object.assign(new Error('Invalid TOTP code'), { statusCode: 400 }),
+        new BadRequest('Invalid TOTP code'),
       )
       const api = await setup()
 
@@ -253,7 +254,7 @@ describe('routes -> auth -> two-factor', () => {
 
     it('should return 400 for an invalid TOTP code', async () => {
       vi.mocked(disableTotp).mockRejectedValue(
-        Object.assign(new Error('Invalid TOTP code'), { statusCode: 400 }),
+        new BadRequest('Invalid TOTP code'),
       )
       const api = await setup()
 

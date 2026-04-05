@@ -1,13 +1,14 @@
 import { randomBytes } from 'node:crypto'
 import argon2 from 'argon2'
 import { prisma } from '../../../core/prisma.js'
+import { NotFound } from '../../../core/errors/index.js'
 import type { ApiKeyWithSecret } from '../type.js'
 
 export async function renewApiKey(id: string, userId: string): Promise<ApiKeyWithSecret> {
   const apiKey = await prisma.apiKey.findFirst({ where: { id, userId } })
 
   if (!apiKey) {
-    throw Object.assign(new Error('API key not found'), { statusCode: 404 })
+    throw new NotFound('API key not found')
   }
 
   const rawKey = randomBytes(32).toString('hex')

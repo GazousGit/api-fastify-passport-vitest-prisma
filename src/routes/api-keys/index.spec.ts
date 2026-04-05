@@ -1,4 +1,5 @@
 import { vi, describe, it, expect, beforeEach, onTestFinished } from 'vitest'
+import { NotFound, BadRequest, InternalServerError } from '../../core/errors/index.js'
 import Fastify from 'fastify'
 import request from 'supertest'
 import apiKeyRoutes from './index.js'
@@ -99,7 +100,7 @@ describe('routes -> api-keys', () => {
 
     it('should propagate errors thrown by the service', async () => {
       vi.mocked(createApiKey).mockRejectedValue(
-        Object.assign(new Error('Unexpected error'), { statusCode: 500 }),
+        new InternalServerError('Unexpected error'),
       )
       const api = await setup('User')
 
@@ -140,7 +141,7 @@ describe('routes -> api-keys', () => {
 
     it('should return 404 when key is not found', async () => {
       vi.mocked(deleteApiKey).mockRejectedValue(
-        Object.assign(new Error('API key not found'), { statusCode: 404 }),
+        new NotFound('API key not found'),
       )
       const api = await setup('Admin')
 
@@ -183,7 +184,7 @@ describe('routes -> api-keys', () => {
 
     it('should return 400 when key is already revoked', async () => {
       vi.mocked(revokeApiKey).mockRejectedValue(
-        Object.assign(new Error('API key is already revoked'), { statusCode: 400 }),
+        new BadRequest('API key is already revoked'),
       )
       const api = await setup('Admin')
 
@@ -226,7 +227,7 @@ describe('routes -> api-keys', () => {
 
     it('should return 404 when key is not found', async () => {
       vi.mocked(renewApiKey).mockRejectedValue(
-        Object.assign(new Error('API key not found'), { statusCode: 404 }),
+        new NotFound('API key not found'),
       )
       const api = await setup('Admin')
 

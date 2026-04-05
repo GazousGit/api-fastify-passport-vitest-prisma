@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto'
 import { prisma } from '../../../../core/prisma.js'
 import { redis } from '../../../../core/redis.js'
+import { NotFound, BadRequest } from '../../../../core/errors/index.js'
 import { sendEmail } from '../../../../utils/sendEmail.js'
 import { sendSms } from '../../../../utils/sendSms.js'
 
@@ -20,11 +21,11 @@ export async function sendOtp(userId: string, channel: OtpChannel): Promise<void
   const user = await prisma.user.findUnique({ where: { id: userId } })
 
   if (!user) {
-    throw Object.assign(new Error('User not found'), { statusCode: 404 })
+    throw new NotFound('User not found')
   }
 
   if (channel === 'SMS' && !user.mobilePhone) {
-    throw Object.assign(new Error('No mobile phone number on file'), { statusCode: 400 })
+    throw new BadRequest('No mobile phone number on file')
   }
 
   const otp = generateOtp()

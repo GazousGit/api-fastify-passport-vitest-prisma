@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import argon2 from 'argon2'
 import { prisma } from '../../../core/prisma.js'
 import { redis } from '../../../core/redis.js'
+import { BadRequest } from '../../../core/errors/index.js'
 import { isStrongPassword } from '../helpers/isStrongPassword.js'
 
 const TOKEN_TTL_SECONDS = 60 * 60 // 1 hour
@@ -29,17 +30,12 @@ export async function requestPasswordReset(email: string): Promise<string> {
 
 export async function resetPassword(token: string, newPassword: string): Promise<void> {
   if (!isStrongPassword(newPassword)) {
-    throw Object.assign(
-      new Error(
-        'Password must be at least 8 characters and include uppercase, lowercase, digit, and symbol',
-      ),
-      { statusCode: 400 },
-    )
+    throw new BadRequest('Password must be at least 8 characters and include uppercase, lowercase, digit, and symbol')
   }
 
   const userId = await redis.get(`${REDIS_KEY_PREFIX}${token}`)
   if (!userId) {
-    throw Object.assign(new Error('Invalid or expired reset token'), { statusCode: 400 })
+    throw new BadRequest('Invalid or expired reset token')
   }
 
   const passwordHash = await argon2.hash(newPassword)

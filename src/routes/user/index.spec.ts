@@ -1,4 +1,5 @@
 import { vi, describe, it, expect, beforeEach, onTestFinished } from 'vitest'
+import { NotFound } from '../../core/errors/index.js'
 import Fastify from 'fastify'
 import request from 'supertest'
 import userRoutes from './index.js'
@@ -79,7 +80,7 @@ describe('routes -> user -> ', () => {
 
     it('should throw 404 when the service throws a not-found error', async () => {
       vi.mocked(getUserById).mockRejectedValue(
-        Object.assign(new Error('not found'), { statusCode: 404 }),
+        new NotFound('not found'),
       )
       const api = await setup()
 
@@ -209,7 +210,7 @@ describe('routes -> user -> ', () => {
 
     it('should return 404 when the service throws a not-found error', async () => {
       vi.mocked(deleteUser).mockRejectedValue(
-        Object.assign(new Error('not found'), { statusCode: 404 }),
+        new NotFound('not found'),
       )
       const api = await setup()
 
