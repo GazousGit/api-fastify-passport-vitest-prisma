@@ -23,11 +23,23 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       DATABASE_URL: postgresql://user:password@localhost:5432/mydb
+      REDIS_URL: redis://localhost:6379
       ALLOWED_ORIGIN: http://localhost:5173
       NODE_ENV: test
+      SESSION_SECRET: placeholder-secret-minimum-32-characters-long
+      SESSION_SALT: test-salt-16char
 
     steps:
       - uses: actions/checkout@v6
