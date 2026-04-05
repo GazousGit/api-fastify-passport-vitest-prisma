@@ -11,6 +11,7 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     ALLOWED_ORIGIN: z.url().optional(),
     SESSION_SECRET: z.string().min(32),
+    SESSION_SALT: z.string().length(16),
     REDIS_URL: z.string().default('redis://localhost:6379'),
     APP_URL: z.url().default('http://localhost:3000'),
     GOOGLE_CLIENT_ID: z.string().optional(),

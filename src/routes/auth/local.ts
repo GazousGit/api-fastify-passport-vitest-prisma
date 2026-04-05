@@ -69,9 +69,9 @@ const localAuthRoutes: FastifyPluginAsync = async (app) => {
                 properties: {
                   twoFactorRequired: { type: 'boolean', enum: [true] },
                   pendingToken: { type: 'string' },
-                  methods: { type: 'array', items: { type: 'string', enum: ['totp', 'email', 'backup'] } },
+                  method: { type: 'string', enum: ['TOTP', 'EMAIL', 'SMS'] },
                 },
-                required: ['twoFactorRequired', 'pendingToken', 'methods'],
+                required: ['twoFactorRequired', 'pendingToken', 'method'],
               },
             ],
           },

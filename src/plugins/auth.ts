@@ -1,8 +1,6 @@
 import fp from 'fastify-plugin'
-import fastifyCookie from '@fastify/cookie'
-import fastifySession from '@fastify/session'
+import fastifySecureSession from '@fastify/secure-session'
 import { authenticator } from '../core/authenticator.js'
-import { RedisStore } from 'connect-redis'
 import { env } from '../core/env.js'
 import { redis } from '../core/redis.js'
 import { prisma } from '../core/prisma.js'
@@ -19,7 +17,7 @@ import { setupRedditStrategy } from '../modules/auth/strategies/reddit.js'
 import { setupPayPalStrategy } from '../modules/auth/strategies/paypal.js'
 import { setupLinkedInStrategy } from '../modules/auth/strategies/linkedin.js'
 
-// Plugin order matters: cookie → session → passport
+// Plugin order matters: secure-session → passport
 // Wrapped in a single fp() to guarantee sequential registration
 export default fp(async (app) => {
   if (!redis.isOpen) await redis.connect()
@@ -29,18 +27,15 @@ export default fp(async (app) => {
     await redis.quit()
   })
 
-  await app.register(fastifyCookie)
-
-  await app.register(fastifySession, {
+  await app.register(fastifySecureSession, {
     secret: env.SESSION_SECRET,
-    store: new RedisStore({ client: redis }),
+    salt: env.SESSION_SALT,
     cookie: {
       secure: env.NODE_ENV === 'production',
       httpOnly: true,
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
     },
-    saveUninitialized: false,
   })
 
   await app.register(authenticator.initialize())

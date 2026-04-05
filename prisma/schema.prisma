@@ -37,7 +37,6 @@ model User {
 
   localAuth     LocalAuth?
   oauthAccounts OAuthAccount[]
-  sessions      Session[]
   apiKeys       ApiKey[]
   totpSecret    TotpSecret?
   backupCodes   BackupCode[]
@@ -74,20 +73,6 @@ model OAuthAccount {
   @@unique([provider, providerAccountId])
   @@index([userId])
   @@map("oauth_accounts")
-  @@schema("auth")
-}
-
-model Session {
-  id        String   @id
-  userId    String?  @map("user_id") @db.Uuid
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  data      Json     @default("{}")
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@map("sessions")
   @@schema("auth")
 }
 
